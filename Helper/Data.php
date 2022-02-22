@@ -16,12 +16,18 @@ use Magento\Store\Model\ScopeInterface;
 use LiqpayMagento\LiqPay\Model\Payment as LiqPayPayment;
 use Magento\Payment\Helper\Data as PaymentHelper;
 
-
+/**
+ * Class Data
+ * @package LiqpayMagento\LiqPay\Helper
+ */
 class Data extends AbstractHelper
 {
     const XML_PATH_IS_ENABLED  = 'payment/liqpaymagento_liqpay/active';
     const XML_PATH_PUBLIC_KEY  = 'payment/liqpaymagento_liqpay/public_key';
     const XML_PATH_PRIVATE_KEY = 'payment/liqpaymagento_liqpay/private_key';
+    const XML_PATH_SENDBOX_PUBLIC_KEY  = 'payment/liqpaymagento_liqpay/sendbox_public_key';
+    const XML_PATH_SENDBOX_PRIVATE_KEY = 'payment/liqpaymagento_liqpay/sendbox_private_key';
+    const XML_PATH_LANGUAGE = 'payment/liqpaymagento_liqpay/language';
     const XML_PATH_TEST_MODE = 'payment/liqpaymagento_liqpay/sandbox';
     const XML_PATH_TEST_ORDER_SURFIX = 'payment/liqpaymagento_liqpay/sandbox_order_surfix';
     const XML_PATH_DESCRIPTION = 'payment/liqpaymagento_liqpay/description';
@@ -32,15 +38,23 @@ class Data extends AbstractHelper
      */
     protected $_paymentHelper;
 
-    public function __construct(Context $context,
-                                PaymentHelper $paymentHelper)
-    {
+    /**
+     * Data constructor.
+     * @param Context $context
+     * @param PaymentHelper $paymentHelper
+     */
+    public function __construct(
+        Context $context,
+        PaymentHelper $paymentHelper
+    ) {
         parent::__construct($context);
         $this->_paymentHelper = $paymentHelper;
     }
 
-
-    public function isEnabled()
+    /**
+     * @return bool
+     */
+    public function isEnabled():bool
     {
         if ($this->scopeConfig->getValue(
             static::XML_PATH_IS_ENABLED,
@@ -56,6 +70,9 @@ class Data extends AbstractHelper
         return false;
     }
 
+    /**
+     * @return mixed
+     */
     public function isTestMode()
     {
         return $this->scopeConfig->getValue(
@@ -64,6 +81,9 @@ class Data extends AbstractHelper
         );
     }
 
+    /**
+     * @return mixed
+     */
     public function isSecurityCheck()
     {
         return $this->scopeConfig->getValue(
@@ -72,23 +92,68 @@ class Data extends AbstractHelper
         );
     }
 
-    public function getPublicKey()
+    /**
+     * @return string
+     */
+    public function getPublicKey():string
     {
+        if ($this->isTestMode()) {
+            return trim($this->scopeConfig->getValue(
+                static::XML_PATH_SENDBOX_PUBLIC_KEY,
+                ScopeInterface::SCOPE_STORE
+            ));
+        }
+
         return trim($this->scopeConfig->getValue(
             static::XML_PATH_PUBLIC_KEY,
             ScopeInterface::SCOPE_STORE
         ));
     }
 
-    public function getPrivateKey()
+    /**
+     * @return string
+     */
+    public function getPrivateKey():string
     {
+        if ($this->isTestMode()) {
+            return trim($this->scopeConfig->getValue(
+                static::XML_PATH_SENDBOX_PRIVATE_KEY,
+                ScopeInterface::SCOPE_STORE
+            ));
+        }
+
         return trim($this->scopeConfig->getValue(
             static::XML_PATH_PRIVATE_KEY,
             ScopeInterface::SCOPE_STORE
         ));
     }
 
-    public function getTestOrderSurfix()
+    /**
+     * @return string
+     */
+    public function getSendboxPublicKey():string
+    {
+        return trim($this->scopeConfig->getValue(
+            static::XML_PATH_SENDBOX_PUBLIC_KEY,
+            ScopeInterface::SCOPE_STORE
+        ));
+    }
+
+    /**
+     * @return string
+     */
+    public function getSendboxPrivateKey():string
+    {
+        return trim($this->scopeConfig->getValue(
+            static::XML_PATH_SENDBOX_PRIVATE_KEY,
+            ScopeInterface::SCOPE_STORE
+        ));
+    }
+
+    /**
+     * @return string
+     */
+    public function getTestOrderSurfix():string
     {
         return trim($this->scopeConfig->getValue(
             static::XML_PATH_TEST_ORDER_SURFIX,
@@ -96,7 +161,11 @@ class Data extends AbstractHelper
         ));
     }
 
-    public function getLiqPayDescription(\Magento\Sales\Api\Data\OrderInterface $order = null)
+    /**
+     * @param \Magento\Sales\Api\Data\OrderInterface|null $order
+     * @return string
+     */
+    public function getLiqPayDescription(\Magento\Sales\Api\Data\OrderInterface $order = null):string
     {
         $description = trim($this->scopeConfig->getValue(
             static::XML_PATH_DESCRIPTION,
@@ -108,30 +177,54 @@ class Data extends AbstractHelper
         return strtr($description, $params);
     }
 
-    public function checkOrderIsLiqPayPayment(\Magento\Sales\Api\Data\OrderInterface $order)
+    /**
+     * @param \Magento\Sales\Api\Data\OrderInterface $order
+     * @return bool
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function checkOrderIsLiqPayPayment(\Magento\Sales\Api\Data\OrderInterface $order):bool
     {
         $method = $order->getPayment()->getMethod();
         $methodInstance = $this->_paymentHelper->getMethodInstance($method);
         return $methodInstance instanceof LiqPayPayment;
     }
 
-    public function securityOrderCheck($data, $receivedPublicKey, $receivedSignature)
+    /**
+     * @param $data
+     * @param $receivedPublicKey
+     * @param $receivedSignature
+     * @return bool
+     */
+    public function securityOrderCheck($data, $receivedPublicKey, $receivedSignature):bool
     {
         if ($this->isSecurityCheck()) {
             $publicKey = $this->getPublicKey();
             if ($publicKey !== $receivedPublicKey) {
                 return false;
-            }            
-            
+            }
+
             $privateKey = $this->getPrivateKey();
             $generatedSignature = base64_encode(sha1($privateKey . $data . $privateKey, 1));
-            
+
             return $receivedSignature === $generatedSignature;
         } else {
             return true;
         }
     }
 
+    /**
+     * @return string
+     */
+    public function getLanguage():string
+    {
+        return trim($this->scopeConfig->getValue(
+            static::XML_PATH_LANGUAGE,
+            ScopeInterface::SCOPE_STORE
+        ));
+    }
+    /**
+     * @return \Psr\Log\LoggerInterface
+     */
     public function getLogger()
     {
         return $this->_logger;
