@@ -25,8 +25,6 @@ class Data extends AbstractHelper
     const XML_PATH_IS_ENABLED  = 'payment/liqpaymagento_liqpay/active';
     const XML_PATH_PUBLIC_KEY  = 'payment/liqpaymagento_liqpay/public_key';
     const XML_PATH_PRIVATE_KEY = 'payment/liqpaymagento_liqpay/private_key';
-    const XML_PATH_SENDBOX_PUBLIC_KEY  = 'payment/liqpaymagento_liqpay/sendbox_public_key';
-    const XML_PATH_SENDBOX_PRIVATE_KEY = 'payment/liqpaymagento_liqpay/sendbox_private_key';
     const XML_PATH_LANGUAGE = 'payment/liqpaymagento_liqpay/language';
     const XML_PATH_TEST_MODE = 'payment/liqpaymagento_liqpay/sandbox';
     const XML_PATH_TEST_ORDER_SURFIX = 'payment/liqpaymagento_liqpay/sandbox_order_surfix';
@@ -97,13 +95,6 @@ class Data extends AbstractHelper
      */
     public function getPublicKey():string
     {
-        if ($this->isTestMode()) {
-            return trim($this->scopeConfig->getValue(
-                static::XML_PATH_SENDBOX_PUBLIC_KEY,
-                ScopeInterface::SCOPE_STORE
-            ));
-        }
-
         return trim($this->scopeConfig->getValue(
             static::XML_PATH_PUBLIC_KEY,
             ScopeInterface::SCOPE_STORE
@@ -115,37 +106,8 @@ class Data extends AbstractHelper
      */
     public function getPrivateKey():string
     {
-        if ($this->isTestMode()) {
-            return trim($this->scopeConfig->getValue(
-                static::XML_PATH_SENDBOX_PRIVATE_KEY,
-                ScopeInterface::SCOPE_STORE
-            ));
-        }
-
         return trim($this->scopeConfig->getValue(
             static::XML_PATH_PRIVATE_KEY,
-            ScopeInterface::SCOPE_STORE
-        ));
-    }
-
-    /**
-     * @return string
-     */
-    public function getSendboxPublicKey():string
-    {
-        return trim($this->scopeConfig->getValue(
-            static::XML_PATH_SENDBOX_PUBLIC_KEY,
-            ScopeInterface::SCOPE_STORE
-        ));
-    }
-
-    /**
-     * @return string
-     */
-    public function getSendboxPrivateKey():string
-    {
-        return trim($this->scopeConfig->getValue(
-            static::XML_PATH_SENDBOX_PRIVATE_KEY,
             ScopeInterface::SCOPE_STORE
         ));
     }
