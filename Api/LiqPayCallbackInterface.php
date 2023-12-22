@@ -10,10 +10,7 @@
 
 namespace LiqpayMagento\LiqPay\Api;
 
-/**
- * Interface LiqPayCallbackInterface
- * @package LiqpayMagento\LiqPay\Api
- */
+
 interface LiqPayCallbackInterface
 {
     /**

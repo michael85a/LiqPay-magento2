@@ -16,46 +16,33 @@ use Magento\Store\Model\ScopeInterface;
 use LiqpayMagento\LiqPay\Model\Payment as LiqPayPayment;
 use Magento\Payment\Helper\Data as PaymentHelper;
 
-/**
- * Class Data
- * @package LiqpayMagento\LiqPay\Helper
- */
+
 class Data extends AbstractHelper
 {
     const XML_PATH_IS_ENABLED  = 'payment/liqpaymagento_liqpay/active';
     const XML_PATH_PUBLIC_KEY  = 'payment/liqpaymagento_liqpay/public_key';
     const XML_PATH_PRIVATE_KEY = 'payment/liqpaymagento_liqpay/private_key';
-    const XML_PATH_LANGUAGE = 'payment/liqpaymagento_liqpay/language';
     const XML_PATH_TEST_MODE = 'payment/liqpaymagento_liqpay/sandbox';
     const XML_PATH_TEST_ORDER_SURFIX = 'payment/liqpaymagento_liqpay/sandbox_order_surfix';
     const XML_PATH_DESCRIPTION = 'payment/liqpaymagento_liqpay/description';
     const XML_PATH_CALLBACK_SECURITY_CHECK = 'payment/liqpaymagento_liqpay/security_check';
-
     /**
      * @var PaymentHelper
      */
     protected $_paymentHelper;
 
-    /**
-     * Data constructor.
-     * @param Context $context
-     * @param PaymentHelper $paymentHelper
-     */
-    public function __construct(
-        Context $context,
-        PaymentHelper $paymentHelper
-    ) {
+    public function __construct(Context $context,
+                                PaymentHelper $paymentHelper)
+    {
         parent::__construct($context);
         $this->_paymentHelper = $paymentHelper;
     }
 
-    /**
-     * @return bool
-     */
-    public function isEnabled():bool
+
+    public function isEnabled()
     {
         if ($this->scopeConfig->getValue(
-            static::XML_PATH_IS_ENABLED,
+            self::XML_PATH_IS_ENABLED,
             ScopeInterface::SCOPE_STORE
         )
         ) {
@@ -68,69 +55,50 @@ class Data extends AbstractHelper
         return false;
     }
 
-    /**
-     * @return mixed
-     */
     public function isTestMode()
     {
         return $this->scopeConfig->getValue(
-            static::XML_PATH_TEST_MODE,
+            self::XML_PATH_TEST_MODE,
             ScopeInterface::SCOPE_STORE
         );
     }
 
-    /**
-     * @return mixed
-     */
     public function isSecurityCheck()
     {
         return $this->scopeConfig->getValue(
-            static::XML_PATH_CALLBACK_SECURITY_CHECK,
+            self::XML_PATH_CALLBACK_SECURITY_CHECK,
             ScopeInterface::SCOPE_STORE
         );
     }
 
-    /**
-     * @return string
-     */
-    public function getPublicKey():string
+    public function getPublicKey()
     {
         return trim($this->scopeConfig->getValue(
-            static::XML_PATH_PUBLIC_KEY,
+            self::XML_PATH_PUBLIC_KEY,
             ScopeInterface::SCOPE_STORE
         ));
     }
 
-    /**
-     * @return string
-     */
-    public function getPrivateKey():string
+    public function getPrivateKey()
     {
         return trim($this->scopeConfig->getValue(
-            static::XML_PATH_PRIVATE_KEY,
+            self::XML_PATH_PRIVATE_KEY,
             ScopeInterface::SCOPE_STORE
         ));
     }
 
-    /**
-     * @return string
-     */
-    public function getTestOrderSurfix():string
+    public function getTestOrderSurfix()
     {
         return trim($this->scopeConfig->getValue(
-            static::XML_PATH_TEST_ORDER_SURFIX,
+            self::XML_PATH_TEST_ORDER_SURFIX,
             ScopeInterface::SCOPE_STORE
         ));
     }
 
-    /**
-     * @param \Magento\Sales\Api\Data\OrderInterface|null $order
-     * @return string
-     */
-    public function getLiqPayDescription(\Magento\Sales\Api\Data\OrderInterface $order = null):string
+    public function getLiqPayDescription(\Magento\Sales\Api\Data\OrderInterface $order = null)
     {
         $description = trim($this->scopeConfig->getValue(
-            static::XML_PATH_DESCRIPTION,
+            self::XML_PATH_DESCRIPTION,
             ScopeInterface::SCOPE_STORE
         ));
         $params = [
@@ -139,54 +107,30 @@ class Data extends AbstractHelper
         return strtr($description, $params);
     }
 
-    /**
-     * @param \Magento\Sales\Api\Data\OrderInterface $order
-     * @return bool
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    public function checkOrderIsLiqPayPayment(\Magento\Sales\Api\Data\OrderInterface $order):bool
+    public function checkOrderIsLiqPayPayment(\Magento\Sales\Api\Data\OrderInterface $order)
     {
         $method = $order->getPayment()->getMethod();
         $methodInstance = $this->_paymentHelper->getMethodInstance($method);
         return $methodInstance instanceof LiqPayPayment;
     }
 
-    /**
-     * @param $data
-     * @param $receivedPublicKey
-     * @param $receivedSignature
-     * @return bool
-     */
-    public function securityOrderCheck($data, $receivedPublicKey, $receivedSignature):bool
+    public function securityOrderCheck($data, $receivedPublicKey, $receivedSignature)
     {
         if ($this->isSecurityCheck()) {
             $publicKey = $this->getPublicKey();
             if ($publicKey !== $receivedPublicKey) {
                 return false;
             }
-
+            
             $privateKey = $this->getPrivateKey();
             $generatedSignature = base64_encode(sha1($privateKey . $data . $privateKey, 1));
-
+            
             return $receivedSignature === $generatedSignature;
         } else {
             return true;
         }
     }
 
-    /**
-     * @return string
-     */
-    public function getLanguage():string
-    {
-        return trim($this->scopeConfig->getValue(
-            static::XML_PATH_LANGUAGE,
-            ScopeInterface::SCOPE_STORE
-        ));
-    }
-    /**
-     * @return \Psr\Log\LoggerInterface
-     */
     public function getLogger()
     {
         return $this->_logger;
